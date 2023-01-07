@@ -1,7 +1,7 @@
 BINARY = glsl-preview
 
-$(BINARY): obj/main.o obj/window.o
-	gcc $^ -lXrender -lX11 -lGLEW -lGL -lGLU -o $@
+$(BINARY): obj/main.o
+	gcc $^ -lGLEW -lGL -lGLU -lglut -o $@
 
 obj/%.o: src/%.c obj
 	gcc -c $< -o $@

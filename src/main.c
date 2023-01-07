@@ -1,42 +1,110 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <GL/glew.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
+#include <GL/glut.h>
 
-#include "window.h"
+GLuint program;
+
+char* load_shader(const char* path)
+{
+	FILE* fp = fopen(path, "r");
+	char* buf;
+	long size;
+
+	if (fp == NULL) return NULL;
+
+	fseek(fp, 0L, SEEK_END);
+	size = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+
+	buf = malloc(size + 1);
+	fread(buf, 1, size, fp);
+	buf[size] = '\0';
+	fclose(fp);
+
+	return buf;
+}
+
+void shader(const char* path)
+{
+	const char* shader_source = load_shader(path);
+	if (!shader_source)
+	{
+		fputs("ERROR: Failed to load file.\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	//Create shader and attach it to program.
+	program = glCreateProgram();
+	GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	glAttachShader(program, fragment_shader);
+
+	//Compile the shader
+	glShaderSource(fragment_shader, 1, &shader_source, NULL);
+	glCompileShader(fragment_shader);
+
+	GLint status = 0;
+	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &status);
+	if (status == GL_FALSE)
+	{
+		GLint length = 0;
+		glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &length);
+		char log[length];
+		glGetShaderInfoLog(fragment_shader, length, &length, log);
+
+		fputs(log, stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	//link and error check
+	glLinkProgram(program);
+	glGetProgramiv(program, GL_LINK_STATUS, &status);
+	if (status == GL_FALSE)
+	{
+		GLint length = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+		char log[length];
+		glGetProgramInfoLog(program, length, &length, log);
+
+		fputs(log, stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	//use program object
+	glUseProgram(program);
+}
+
+void draw(void)
+{
+	glUseProgram(0);
+}
 
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
 		fputs("ERROR: No GLSL file specified.\n", stderr);
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 
-	Display* display = XOpenDisplay(NULL);
-
-	if (!display)
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+	glutInitWindowSize(640, 480);
+	glutCreateWindow("glsl-preview");
+	if (glewInit() != GLEW_OK)
 	{
-		fputs("ERROR: Unable to connect to X server.\n", stderr);
-		return 1;
+		fputs("ERROR: Failed to init GLEW.\n", stderr);
+		exit(EXIT_FAILURE);
 	}
 
-	int dummy;
-	if (!glXQueryExtension(display, &dummy, &dummy)) {
-		fputs("ERROR: OpenGL not supported by X server.\n", stderr);
-		return 1;
-	}
+	glClearColor(1.0, 0.0, 0.0, 0.0);
+	gluOrtho2D(0.0, 0.0, (GLfloat)640, (GLfloat)480);
 
-	Window window_handle = create_window(display, "glsl-preview");
-	GLXContext context = create_render_context(display, window_handle);
 
-	if (!context)
-	{
-		fputs("ERROR: Failed to create a GL context.\n", stderr);
-		return 1;
-	}
+	glutDisplayFunc(draw);
+
+	shader(argv[1]);
+	glutMainLoop();
 
 	return 0;
 }
