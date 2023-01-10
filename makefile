@@ -1,6 +1,6 @@
 BINARY = glsl-preview
 
-$(BINARY): obj/main.o
+$(BINARY): obj/main.o obj/shader.o
 	gcc $^ -lGLEW -lGL -lGLU -lglut -o $@
 
 obj/%.o: src/%.c obj
