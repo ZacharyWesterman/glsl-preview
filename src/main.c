@@ -75,7 +75,10 @@ void draw(void)
 	}
 
 	glutSwapBuffers();
+}
 
+void sync_file_change(int id)
+{
 	//reload shader if it changed.
 	struct stat st;
 	time_t last_change = (stat(shader_path, &st) != 0) ? 0 : st.st_mtime;
@@ -84,6 +87,7 @@ void draw(void)
 		Program = shader(shader_path, &active_program, shader_error, 0);
 		shader_last_change = last_change;
 	}
+	glutTimerFunc(200, sync_file_change, 0);
 }
 
 void resize(int w, int h)
@@ -161,6 +165,7 @@ int main(int argc, char** argv)
 	glutMotionFunc(mouse);
 	glutPassiveMotionFunc(mouse);
 	glutTimerFunc(1000 / 60, draw_timer, 0);
+	glutTimerFunc(200, sync_file_change, 0);
 
 	clock_gettime(CLOCK_REALTIME, &u_time);
 	glutMainLoop();
