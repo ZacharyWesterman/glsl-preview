@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/stat.h>
 #include <GL/glew.h>
 // #include <GL/glut.h>
 #include <GL/freeglut.h>
@@ -20,6 +21,8 @@ GLuint width, height;
 float frame_elapsed[elapse_bufsiz] = {0.0f};
 int elapse_counter = 0;
 float prev_frame = 0.0;
+
+time_t shader_last_change = 0;
 
 float get_fps(void)
 {
@@ -59,6 +62,7 @@ void draw(void)
 
 	if (shader_error[0])
 	{
+		glUseProgram(0);
 		glWindowPos2i(10, height - 20);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, shader_error);
@@ -71,6 +75,15 @@ void draw(void)
 	}
 
 	glutSwapBuffers();
+
+	//reload shader if it changed.
+	struct stat st;
+	time_t last_change = (stat(shader_path, &st) != 0) ? 0 : st.st_mtime;
+	if (last_change > shader_last_change)
+	{
+		Program = shader(shader_path, &active_program, shader_error, 0);
+		shader_last_change = last_change;
+	}
 }
 
 void resize(int w, int h)
@@ -101,6 +114,9 @@ void select_file(int id)
 	if (!shader_path[0]) return;
 	shader_path[strlen(shader_path)-1] = '\0'; //remove newline from the end.
 
+	struct stat st;
+	shader_last_change = (stat(shader_path, &st) != 0) ? 0 : st.st_mtime;
+
 	Program = shader(shader_path, &active_program, shader_error, 0);
 }
 
@@ -128,9 +144,6 @@ int main(int argc, char** argv)
 		fputs("ERROR: Failed to init GLEW.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 
 	const char defaultfrag[] =
 	"uniform float u_time;\n"
