@@ -59,9 +59,7 @@ void draw(void)
 
 	if (shader_error[0])
 	{
-		float x = -1.0 + 20.0 / (float)width;
-		float y = 1.0 - 50.0 / (float)height;
-		glRasterPos2f(x, y);
+		glWindowPos2i(10, height - 20);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, shader_error);
 	}
@@ -104,8 +102,6 @@ void select_file(int id)
 	shader_path[strlen(shader_path)-1] = '\0'; //remove newline from the end.
 
 	Program = shader(shader_path, &active_program, shader_error, 0);
-	// printf("result: >>%s<<\n", shader_path);
-	// fflush(stdout);
 }
 
 void menu(int action)
