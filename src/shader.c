@@ -25,7 +25,7 @@ char* load_shader(const char* path)
 	return buf;
 }
 
-int check_compile_status(int shader_id, char* error_message)
+int check_compile_status(int shader_id, const char* path, char* error_message)
 {
 	GLint status = GL_FALSE;
 	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &status);
@@ -36,14 +36,14 @@ int check_compile_status(int shader_id, char* error_message)
 		char log[length];
 		glGetShaderInfoLog(shader_id, length, &length, log);
 
-		strcpy(error_message, log);
+		sprintf(error_message, "Shader Error in %s:\n%s", path, log);
 		return 0;
 	}
 
 	return 1;
 }
 
-int check_link_status(int program_id, char* error_message)
+int check_link_status(int program_id, const char* path, char* error_message)
 {
 	GLuint status = GL_FALSE;
 	glGetProgramiv(program_id, GL_LINK_STATUS, &status);
@@ -54,7 +54,7 @@ int check_link_status(int program_id, char* error_message)
 		char log[length];
 		glGetProgramInfoLog(program_id, length, &length, log);
 
-		strcpy(error_message, log);
+		sprintf(error_message, "Shader Error in %s:\n%s", path, log);
 		return 0;
 	}
 
@@ -68,8 +68,7 @@ GLuint vertex_shader(const char* path, int* status, char* error_message)
 	if (!shader_source)
 	{
 		char out[GL_INFO_LOG_LENGTH];
-		sprintf(out, "ERROR: Failed to load file:\n%s", path);
-		strcpy(error_message, out);
+		sprintf(error_message, "Failed to load \"%s\"\n", path);
 		*status = GL_FALSE;
 		return 0;
 	}
@@ -77,7 +76,7 @@ GLuint vertex_shader(const char* path, int* status, char* error_message)
 	GLuint shader_id = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(shader_id, 1, &shader_source, NULL);
 	glCompileShader(shader_id);
-	*status = check_compile_status(shader_id, error_message);
+	*status = check_compile_status(shader_id, path, error_message);
 
 	return shader_id;
 }
@@ -88,9 +87,7 @@ GLuint fragment_shader(const char* path, int* status, char* error_message)
 	const char* shader_source = load_shader(path);
 	if (!shader_source)
 	{
-		char out[GL_INFO_LOG_LENGTH];
-		sprintf(out, "ERROR: Failed to load file:\n%s", path);
-		strcpy(error_message, out);
+		sprintf(error_message, "Failed to load \"%s\"\n", path);
 		*status = GL_FALSE;
 		return 0;
 	}
@@ -100,7 +97,7 @@ GLuint fragment_shader(const char* path, int* status, char* error_message)
 	//Compile the shader
 	glShaderSource(shader_id, 1, &shader_source, NULL);
 	glCompileShader(shader_id);
-	*status = check_compile_status(shader_id, error_message);
+	*status = check_compile_status(shader_id, path, error_message);
 
 	return shader_id;
 }
@@ -123,7 +120,7 @@ int shader(const char* path, int* status, char* error_message)
 
 	//link and error check
 	glLinkProgram(program);
-	*status = check_link_status(program, error_message);
+	*status = check_link_status(program, path, error_message);
 	if (*status == GL_FALSE) return 0;
 
 	GLfloat vertices[] = {
@@ -164,7 +161,7 @@ int shader(const char* path, int* status, char* error_message)
 	glEnable(GL_DEPTH_TEST);
 
 	//use program object
-	glUseProgram(program);
+	// glUseProgram(program);
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);

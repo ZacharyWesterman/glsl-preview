@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <time.h>
 #include <GL/glew.h>
-#include <GL/glut.h>
+// #include <GL/glut.h>
+#include <GL/freeglut.h>
 
 #include "shader.h"
 
@@ -28,15 +29,15 @@ void draw(void)
 		GLfloat elapsed = (now.tv_sec + now.tv_nsec * 1e-9) - (u_time.tv_sec - u_time.tv_nsec * 1e-9);
 
 		glUniform1f(glGetUniformLocation(Program, "u_time"), elapsed);
-
 		glUseProgram(Program);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)0);
 	}
 
 	if (shader_error[0])
 	{
-		printf("Shader Error in %s:\n%s", shader_path, shader_error);
-		fflush(stdout);
+		glRasterPos2i(0, 0);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glutBitmapString(GLUT_BITMAP_HELVETICA_18, shader_error);
 	}
 
 	glutSwapBuffers();
@@ -78,6 +79,9 @@ int main(int argc, char** argv)
 		fputs("ERROR: Failed to init GLEW.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 
 	strcpy(shader_path, (argc < 2) ? "cfg/default_fragment.glsl" : argv[1]);
 	Program = shader(shader_path, &active_program, shader_error);
