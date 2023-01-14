@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -7,30 +8,54 @@
 
 #include "shader.h"
 
+char shader_path[4096] = "\0";
+char shader_error[65536] = "\0";
+int active_program = 0;
 GLuint Program;
 struct timespec u_time;
+GLuint width, height;
 
 void draw(void)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	struct timespec now;
-	clock_gettime(CLOCK_REALTIME, &now);
+	if (active_program)
+	{
+		struct timespec now;
+		clock_gettime(CLOCK_REALTIME, &now);
 
-	GLfloat elapsed = (now.tv_sec + now.tv_nsec * 1e-9) - (u_time.tv_sec - u_time.tv_nsec * 1e-9);
+		GLfloat elapsed = (now.tv_sec + now.tv_nsec * 1e-9) - (u_time.tv_sec - u_time.tv_nsec * 1e-9);
 
-	glUniform1f(glGetUniformLocation(Program, "u_time"), elapsed);
+		glUniform1f(glGetUniformLocation(Program, "u_time"), elapsed);
 
-	glUseProgram(Program);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)0);
+		glUseProgram(Program);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)0);
+	}
+
+	if (shader_error[0])
+	{
+		printf("Shader Error in %s:\n%s", shader_path, shader_error);
+		fflush(stdout);
+	}
+
 	glutSwapBuffers();
 }
 
 void resize(int w, int h)
 {
-	glUniform2f(glGetUniformLocation(Program, "u_resolution"), w, h);
+	width = w; height = h;
+	if (active_program) {
+		glUniform2f(glGetUniformLocation(Program, "u_resolution"), w, h);
+	}
 	glViewport(0, 0, w, h);
+}
+
+void mouse(int x, int y)
+{
+	if (active_program) {
+		glUniform2f(glGetUniformLocation(Program, "u_mouse"), x / (float)width, 1.0 - y / (float)height);
+	}
 }
 
 void draw_timer(int id)
@@ -54,10 +79,13 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	Program = (argc < 2) ? shader("cfg/default_fragment.glsl") : shader(argv[1]);
+	strcpy(shader_path, (argc < 2) ? "cfg/default_fragment.glsl" : argv[1]);
+	Program = shader(shader_path, &active_program, shader_error);
 
-	// glutDisplayFunc(draw);
+	glutDisplayFunc(draw);
 	glutReshapeFunc(resize);
+	glutMotionFunc(mouse);
+	glutPassiveMotionFunc(mouse);
 	glutTimerFunc(1000 / 60, draw_timer, 0);
 
 	clock_gettime(CLOCK_REALTIME, &u_time);

@@ -1,5 +1,6 @@
 #include "shader.h"
 
+#include <string.h>
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -24,9 +25,9 @@ char* load_shader(const char* path)
 	return buf;
 }
 
-void check_compile_status(int shader_id)
+int check_compile_status(int shader_id, char* error_message)
 {
-	GLint status = 0;
+	GLint status = GL_FALSE;
 	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &status);
 	if (status == GL_FALSE)
 	{
@@ -35,14 +36,16 @@ void check_compile_status(int shader_id)
 		char log[length];
 		glGetShaderInfoLog(shader_id, length, &length, log);
 
-		fputs(log, stderr);
-		exit(EXIT_FAILURE);
+		strcpy(error_message, log);
+		return 0;
 	}
+
+	return 1;
 }
 
-void check_link_status(int program_id)
+int check_link_status(int program_id, char* error_message)
 {
-	GLuint status = 0;
+	GLuint status = GL_FALSE;
 	glGetProgramiv(program_id, GL_LINK_STATUS, &status);
 	if (status == GL_FALSE)
 	{
@@ -51,35 +54,45 @@ void check_link_status(int program_id)
 		char log[length];
 		glGetProgramInfoLog(program_id, length, &length, log);
 
-		fputs(log, stderr);
-		exit(EXIT_FAILURE);
+		strcpy(error_message, log);
+		return 0;
 	}
+
+	return 1;
 }
 
-GLuint vertex_shader(const char* path)
+GLuint vertex_shader(const char* path, int* status, char* error_message)
 {
+	*status = GL_TRUE;
 	const char* shader_source = load_shader(path);
 	if (!shader_source)
 	{
-		fputs("ERROR: Failed to load file.\n", stderr);
-		exit(EXIT_FAILURE);
+		char out[GL_INFO_LOG_LENGTH];
+		sprintf(out, "ERROR: Failed to load file:\n%s", path);
+		strcpy(error_message, out);
+		*status = GL_FALSE;
+		return 0;
 	}
 
 	GLuint shader_id = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(shader_id, 1, &shader_source, NULL);
 	glCompileShader(shader_id);
-	check_compile_status(shader_id);
+	*status = check_compile_status(shader_id, error_message);
 
 	return shader_id;
 }
 
-GLuint fragment_shader(const char* path)
+GLuint fragment_shader(const char* path, int* status, char* error_message)
 {
+	*status = GL_TRUE;
 	const char* shader_source = load_shader(path);
 	if (!shader_source)
 	{
-		fputs("ERROR: Failed to load file.\n", stderr);
-		exit(EXIT_FAILURE);
+		char out[GL_INFO_LOG_LENGTH];
+		sprintf(out, "ERROR: Failed to load file:\n%s", path);
+		strcpy(error_message, out);
+		*status = GL_FALSE;
+		return 0;
 	}
 
 	GLuint shader_id = glCreateShader(GL_FRAGMENT_SHADER);
@@ -87,16 +100,21 @@ GLuint fragment_shader(const char* path)
 	//Compile the shader
 	glShaderSource(shader_id, 1, &shader_source, NULL);
 	glCompileShader(shader_id);
-	check_compile_status(shader_id);
+	*status = check_compile_status(shader_id, error_message);
 
 	return shader_id;
 }
 
-int shader(const char* path)
+int shader(const char* path, int* status, char* error_message)
 {
+	strcpy(error_message, "\0");
+
 	//Create vertex & fragment shaders
-	GLuint vertex = vertex_shader("cfg/vertex.glsl");
-	GLuint fragment = fragment_shader(path);
+	GLuint vertex = vertex_shader("cfg/vertex.glsl", status, error_message);
+	if (*status == GL_FALSE) return 0;
+
+	GLuint fragment = fragment_shader(path, status, error_message);
+	if (*status == GL_FALSE) return 0;
 
 	//Attach them to program.
 	GLuint program = glCreateProgram();
@@ -105,7 +123,8 @@ int shader(const char* path)
 
 	//link and error check
 	glLinkProgram(program);
-	check_link_status(program);
+	*status = check_link_status(program, error_message);
+	if (*status == GL_FALSE) return 0;
 
 	GLfloat vertices[] = {
 		1.0f,  1.0f,  0.0f,
