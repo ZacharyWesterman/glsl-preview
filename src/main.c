@@ -54,10 +54,7 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (argc < 2)
-	{
-		Program = (argc < 2) ? shader("cfg/default_fragment.glsl") : shader(argv[1]);
-	}
+	Program = (argc < 2) ? shader("cfg/default_fragment.glsl") : shader(argv[1]);
 
 	// glutDisplayFunc(draw);
 	glutReshapeFunc(resize);
