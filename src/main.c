@@ -41,11 +41,6 @@ void draw_timer(int id)
 
 int main(int argc, char** argv)
 {
-	if (argc < 2)
-	{
-		fputs("ERROR: No GLSL file specified.\n", stderr);
-		exit(EXIT_FAILURE);
-	}
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
@@ -59,9 +54,10 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	// glEnable(GL_DEPTH_TEST);
-	Program = shader(argv[1]);
-	// glActiveTexture(GL_TEXTURE0);
+	if (argc < 2)
+	{
+		Program = (argc < 2) ? shader("cfg/default_fragment.glsl") : shader(argv[1]);
+	}
 
 	// glutDisplayFunc(draw);
 	glutReshapeFunc(resize);

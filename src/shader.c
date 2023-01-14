@@ -95,7 +95,7 @@ GLuint fragment_shader(const char* path)
 int shader(const char* path)
 {
 	//Create vertex & fragment shaders
-	GLuint vertex = vertex_shader("vertex.glsl");
+	GLuint vertex = vertex_shader("cfg/vertex.glsl");
 	GLuint fragment = fragment_shader(path);
 
 	//Attach them to program.
