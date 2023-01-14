@@ -35,7 +35,9 @@ void draw(void)
 
 	if (shader_error[0])
 	{
-		glRasterPos2i(0, 0);
+		float x = -1.0 + 20.0 / (float)width;
+		float y = 1.0 - 50.0 / (float)height;
+		glRasterPos2f(x, y);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, shader_error);
 	}
