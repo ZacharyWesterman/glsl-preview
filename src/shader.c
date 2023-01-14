@@ -61,16 +61,23 @@ int check_link_status(int program_id, const char* path, char* error_message)
 	return 1;
 }
 
-GLuint vertex_shader(const char* path, int* status, char* error_message)
+GLuint vertex_shader(const char* path, int* status, char* error_message, int raw_source)
 {
 	*status = GL_TRUE;
-	const char* shader_source = load_shader(path);
-	if (!shader_source)
+	const char* shader_source;
+	if (!raw_source)
 	{
-		char out[GL_INFO_LOG_LENGTH];
-		sprintf(error_message, "Failed to load \"%s\"\n", path);
-		*status = GL_FALSE;
-		return 0;
+		shader_source = load_shader(path);
+		if (!shader_source)
+		{
+			sprintf(error_message, "Failed to load \"%s\"\n", path);
+			*status = GL_FALSE;
+			return 0;
+		}
+	}
+	else
+	{
+		shader_source = path;
 	}
 
 	GLuint shader_id = glCreateShader(GL_VERTEX_SHADER);
@@ -81,15 +88,23 @@ GLuint vertex_shader(const char* path, int* status, char* error_message)
 	return shader_id;
 }
 
-GLuint fragment_shader(const char* path, int* status, char* error_message)
+GLuint fragment_shader(const char* path, int* status, char* error_message, int raw_source)
 {
 	*status = GL_TRUE;
-	const char* shader_source = load_shader(path);
-	if (!shader_source)
+	const char* shader_source;
+	if (!raw_source)
 	{
-		sprintf(error_message, "Failed to load \"%s\"\n", path);
-		*status = GL_FALSE;
-		return 0;
+		shader_source = load_shader(path);
+		if (!shader_source)
+		{
+			sprintf(error_message, "Failed to load \"%s\"\n", path);
+			*status = GL_FALSE;
+			return 0;
+		}
+	}
+	else
+	{
+		shader_source = path;
 	}
 
 	GLuint shader_id = glCreateShader(GL_FRAGMENT_SHADER);
@@ -102,15 +117,26 @@ GLuint fragment_shader(const char* path, int* status, char* error_message)
 	return shader_id;
 }
 
-int shader(const char* path, int* status, char* error_message)
+int shader(const char* path, int* status, char* error_message, int raw_source)
 {
 	strcpy(error_message, "\0");
 
+	const char vshader[] =
+	"#version 130\n"
+	"in mediump vec3 point;\n"
+	"in mediump vec2 texcoord;\n"
+	"out mediump vec2 UV;\n"
+	"void main()\n"
+	"{\n"
+	"	gl_Position = vec4(point, 1);\n"
+	"	UV = texcoord;\n"
+	"}\n";
+
 	//Create vertex & fragment shaders
-	GLuint vertex = vertex_shader("cfg/vertex.glsl", status, error_message);
+	GLuint vertex = vertex_shader(vshader, status, error_message, 1);
 	if (*status == GL_FALSE) return 0;
 
-	GLuint fragment = fragment_shader(path, status, error_message);
+	GLuint fragment = fragment_shader(path, status, error_message, raw_source);
 	if (*status == GL_FALSE) return 0;
 
 	//Attach them to program.

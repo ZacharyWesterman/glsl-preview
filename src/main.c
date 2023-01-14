@@ -103,7 +103,7 @@ void select_file(int id)
 	if (!shader_path[0]) return;
 	shader_path[strlen(shader_path)-1] = '\0'; //remove newline from the end.
 
-	Program = shader(shader_path, &active_program, shader_error);
+	Program = shader(shader_path, &active_program, shader_error, 0);
 	// printf("result: >>%s<<\n", shader_path);
 	// fflush(stdout);
 }
@@ -136,8 +136,16 @@ int main(int argc, char** argv)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 
-	strcpy(shader_path, (argc < 2) ? "cfg/default_fragment.glsl" : argv[1]);
-	Program = shader(shader_path, &active_program, shader_error);
+	const char defaultfrag[] =
+	"uniform float u_time;\n"
+	"void main()\n"
+	"{\n"
+	"	float brightness = (sin(u_time) + 2.0) / 5.0;\n"
+	"	gl_FragColor = vec4(brightness);\n"
+	"}\n";
+
+	strcpy(shader_path, (argc < 2) ? defaultfrag : argv[1]);
+	Program = shader(shader_path, &active_program, shader_error, (argc < 2));
 
 	glutDisplayFunc(draw);
 	glutReshapeFunc(resize);
