@@ -57,19 +57,19 @@ void draw(void)
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *)0);
 	}
 
-	float x = -1.0 + 20.0 / (float)width;
-	float y = 1.0 - 50.0 / (float)height;
-	glRasterPos2f(x, y);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	if (shader_error[0])
 	{
+		float x = -1.0 + 20.0 / (float)width;
+		float y = 1.0 - 50.0 / (float)height;
+		glRasterPos2f(x, y);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, shader_error);
 	}
 	else
 	{
 		char frames[100];
-		sprintf(frames, "FPS: %.0f\n", get_fps());
-		glutBitmapString(GLUT_BITMAP_HELVETICA_18, frames);
+		sprintf(frames, "glsl-preview [%.0f fps]", get_fps());
+		glutSetWindowTitle(frames);
 	}
 
 	glutSwapBuffers();
